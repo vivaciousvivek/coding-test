@@ -1,9 +1,13 @@
 package com.monsanto.mbt;
 
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -15,15 +19,15 @@ import static org.junit.Assert.assertTrue;
  */
 public class ShipmentTest {
 
-  private Shipment shipment;
-  private List<Widget> widgets;
-  private List<String> sortedAscColors;
-  private List<String> sortedDescColors;
-  private List<Date> sortedAscDates;
-  private List<Date> sortedDescDates;
+  private static Shipment shipment;
+  private static List<Widget> widgets;
+  private static List<String> sortedAscColors;
+  private static List<String> sortedDescColors;
+  private static List<Date> sortedAscDates;
+  private static List<Date> sortedDescDates;
 
-  @Before
-  public void init() {
+  @BeforeClass
+  public static void init() {
     shipment = new Shipment();
     widgets = WidgetUtils.getSampleWidgets();
     sortedAscColors = widgets.stream().map(Widget::getColor).collect(Collectors.toList());
@@ -44,94 +48,128 @@ public class ShipmentTest {
   /** Sorted shipment by its color in ascending order */
   @Test
   public void testShipment_Sorted_By_Color() {
-    // Ascending order sorting test
-    List<Widget> sortedWidgetsInAscending =
-        shipment.sortWidgetsByColor(new ArrayList<>(widgets), null);
-
-    // test whether the sorted list not holding more than 10 elements.
-    assertTrue(sortedWidgetsInAscending.size() > 0 && sortedWidgetsInAscending.size() <= 10);
+    List<List<Widget>> sortedShipmentsInAscending =
+        assertShipmentsSize(shipment.sortWidgetsByColor(new ArrayList<>(widgets), null));
 
     // test the list in ascending order by color
-    for (int i = 0; i < sortedWidgetsInAscending.size() - 1; i++) {
-      assertEquals(sortedAscColors.get(i), sortedWidgetsInAscending.get(i).getColor());
-
-      assertTrue(
-          sortedWidgetsInAscending
-                  .get(i)
-                  .getColor()
-                  .compareTo(sortedWidgetsInAscending.get(i + 1).getColor())
-              <= 0);
-    }
+    assertShipmentElementsByColorAndDate(
+        sortedShipmentsInAscending,
+        sortedAscColors.stream().collect(Collectors.toList()),
+        Widget::getColor,
+        (a, b) -> a.toString().compareTo(b.toString()) <= 0);
   }
 
   /** Sorted shipment by its color in descending order */
   @Test
   public void testShipment_Sorted_By_Color_In_Desc() {
-    // Descending order sorting test
-    List<Widget> sortedWidgetsInDescending =
-        shipment.sortWidgetsByColor(
-            new ArrayList<>(widgets), (w1, w2) -> w2.getColor().compareTo(w1.getColor()));
-
-    // test whether the sorted list not holding more than 10 elements.
-    assertTrue(sortedWidgetsInDescending.size() > 0 && sortedWidgetsInDescending.size() <= 10);
+    List<List<Widget>> sortedShipmentsInDescending =
+        assertShipmentsSize(
+            shipment.sortWidgetsByColor(
+                new ArrayList<>(widgets), (w1, w2) -> w2.getColor().compareTo(w1.getColor())));
 
     // test the list in descending order by color
-    for (int i = 0; i < sortedWidgetsInDescending.size() - 1; i++) {
-      assertEquals(sortedDescColors.get(i), sortedWidgetsInDescending.get(i).getColor());
-      assertTrue(
-          sortedWidgetsInDescending
-                  .get(i)
-                  .getColor()
-                  .compareTo(sortedWidgetsInDescending.get(i + 1).getColor())
-              >= 0);
-    }
+    assertShipmentElementsByColorAndDate(
+        sortedShipmentsInDescending,
+        sortedDescColors.stream().collect(Collectors.toList()),
+        Widget::getColor,
+        (a, b) -> a.toString().compareTo(b.toString()) >= 0);
   }
 
   /** Sorted shipment by its date in ascending order */
   @Test
   public void testShipment_Sorted_By_Date() {
-    // Ascending order sorting test
-    List<Widget> sortedWidgetsInAscending =
-        shipment.sortWidgetsByDate(new ArrayList<>(widgets), null);
-
-    // test whether the sorted list not holding more than 10 elements.
-    assertTrue(sortedWidgetsInAscending.size() > 0 && sortedWidgetsInAscending.size() <= 10);
+    List<List<Widget>> sortedShipmentsInAscending =
+        assertShipmentsSize(shipment.sortWidgetsByDate(new ArrayList<>(widgets), null));
 
     // test the list in ascending order by date
-    for (int i = 0; i < sortedWidgetsInAscending.size() - 1; i++) {
-      assertEquals(sortedAscDates.get(i), sortedWidgetsInAscending.get(i).getProductionDate());
-
-      assertTrue(
-          sortedWidgetsInAscending
-                  .get(i)
-                  .getProductionDate()
-                  .compareTo(sortedWidgetsInAscending.get(i + 1).getProductionDate())
-              <= 0);
-    }
+    assertShipmentElementsByColorAndDate(
+        sortedShipmentsInAscending,
+        sortedAscDates.stream().collect(Collectors.toList()),
+        Widget::getProductionDate,
+        (a, b) -> stringToDate(a.toString()).compareTo(stringToDate(b.toString())) <= 0);
   }
 
   /** Sorted shipment by its date in descending order */
   @Test
   public void testShipment_Sorted_By_Date_In_Desc() {
-    // Descending order sorting test
-    List<Widget> sortedWidgetsInDescending =
-        shipment.sortWidgetsByDate(
-            new ArrayList<>(widgets),
-            (w1, w2) -> w2.getProductionDate().compareTo(w1.getProductionDate()));
-
-    // test whether the sorted list not holding more than 10 elements.
-    assertTrue(sortedWidgetsInDescending.size() > 0 && sortedWidgetsInDescending.size() <= 10);
+    List<List<Widget>> sortedShipmentsInDescending =
+        assertShipmentsSize(
+            shipment.sortWidgetsByDate(
+                new ArrayList<>(widgets),
+                (w1, w2) -> w2.getProductionDate().compareTo(w1.getProductionDate())));
 
     // test the list in descending order by date
-    for (int i = 0; i < sortedWidgetsInDescending.size() - 1; i++) {
-      assertEquals(sortedDescDates.get(i), sortedWidgetsInDescending.get(i).getProductionDate());
+    assertShipmentElementsByColorAndDate(
+        sortedShipmentsInDescending,
+        sortedDescDates.stream().collect(Collectors.toList()),
+        Widget::getProductionDate,
+        (a, b) -> stringToDate(a.toString()).compareTo(stringToDate(b.toString())) >= 0);
+  }
 
+  /**
+   * This method will validate the correctness of size of every shipment
+   *
+   * @param sortedShipment sorted shipment list
+   * @return
+   */
+  private List<List<Widget>> assertShipmentsSize(List<List<Widget>> sortedShipment) {
+    // test no. of shipments according to widgets in warehouse.
+    assertEquals(
+        String.format(
+            "No. of Shipments should be %d for %d Widgets of Warehouse",
+            (int) Math.ceil(widgets.size() / 10.0), widgets.size()),
+        (int) Math.ceil(widgets.size() / 10.0),
+        sortedShipment.size());
+
+    // test whether the every shipment is shipments list should have max 10 elements.
+    for (List<Widget> shipment : sortedShipment) {
       assertTrue(
-          sortedWidgetsInDescending
-                  .get(i)
-                  .getProductionDate()
-                  .compareTo(sortedWidgetsInDescending.get(i + 1).getProductionDate())
-              >= 0);
+          "Every Shipment should not have more than 10 elements",
+          shipment.size() > 0 && shipment.size() <= 10);
     }
+
+    return sortedShipment;
+  }
+
+  /**
+   * This method will validate the correctness of elements equality and their order of every
+   * shipment.
+   *
+   * @param sortedShipments sorted shipment list
+   * @param sortedList sorted list of both color and date
+   * @param function function to take getter of color and date as input
+   * @param compareFunction function to take input for comparison of color and date with operator.
+   */
+  private void assertShipmentElementsByColorAndDate(
+      List<List<Widget>> sortedShipments,
+      List<Object> sortedList,
+      Function<Widget, Object> function,
+      BiFunction<Object, Object, Boolean> compareFunction) {
+    int idx = 0;
+    for (int i = 0; i < sortedShipments.size(); i++, idx++) {
+      for (int j = 0; j < sortedShipments.get(i).size() - 1; j++, idx++) {
+        assertEquals(sortedList.get(idx), function.apply(sortedShipments.get(i).get(j)));
+
+        assertTrue(
+            compareFunction.apply(
+                function.apply(sortedShipments.get(i).get(j)),
+                function.apply(sortedShipments.get(i).get(j + 1))));
+      }
+    }
+  }
+
+  /**
+   * @param strDate pass string date into pattern('EEE MMM dd HH:mm:ss z yyyy') by default toString
+   *     method of Date will give this pattern string
+   * @return Date object of passed date in string
+   */
+  private Date stringToDate(String strDate) {
+    try {
+      return new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy").parse(strDate);
+    } catch (ParseException e) {
+      e.printStackTrace();
+    }
+
+    return null;
   }
 }

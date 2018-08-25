@@ -1,7 +1,10 @@
 package com.monsanto.mbt;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * This program is for the shipping specialist that allows the specialist two options for creating
@@ -17,54 +20,87 @@ import java.util.List;
  * @since (2018-08-21 13:18:13)
  */
 public class Shipment {
+
   /**
-   * This method will help the specialist to sort the widgets by date.
+   * This method will help the specialist to create shipment by sorting the widgets on the basis of
+   * date.
    *
    * @param widgets Takes the raw list of widgets as input.
    * @param dateComparator Date comparator object for sorting according to passed comparator. This
-   *     parameter is optional, if user will not pass the comparator object them we will sort the
-   *     list in assenting order.
-   * @return According to constraint we can only hold 10 shipment. hence result will contains only
-   *     10 elements.
+   *     parameter is optional, if user will not pass the comparator object then list will be sorted
+   *     in assenting order.
+   * @return According to constraint we can only hold 10 widgets in a shipment. hence result will
+   *     contains only 10 elements.
    */
-  public List<Widget> sortWidgetsByDate(List<Widget> widgets, Comparator<Widget> dateComparator) {
-    if (widgets == null) throw new IllegalStateException("Input widgets can't be null");
+  public List<List<Widget>> sortWidgetsByDate(
+      List<Widget> widgets, Comparator<Widget> dateComparator) {
 
-    Comparator<Widget> comparator = dateComparator;
-    if (dateComparator == null) {
-      //        This Comparator can also be written using lambda expression like so =>
-      //        comparator = (w1, w2) -> w1.getProductionDate().compareTo(w2.getProductionDate());
-
-      comparator = Comparator.comparing(Widget::getProductionDate);
-    }
-
-    widgets.sort(comparator);
-
-    return widgets.subList(0, 10);
+    return createShipment(widgets, dateComparator, Widget::getProductionDate, null);
   }
 
   /**
-   * This method will help the specialist to sort the widgets by color.
+   * This method will help the specialist to create shipment by sorting the widgets on the basis of
+   * color.
    *
    * @param widgets Takes the raw list of widgets as input.
    * @param colorComparator Color comparator object for sorting according to passed comparator. This
-   *     parameter is optional, if user will not pass the comparator object them we will sort the
-   *     list in assenting order.
-   * @return According to constraint we can only hold 10 shipment. hence result will contains only
-   *     10 elements.
+   *     parameter is optional, if user will not pass the comparator object then list will be sorted
+   *     in assenting order.
+   * @return According to constraint we can only hold 10 widgets in a shipment. hence result will
+   *     contains only 10 elements.
    */
-  public List<Widget> sortWidgetsByColor(List<Widget> widgets, Comparator<Widget> colorComparator) {
-    if (widgets == null) throw new IllegalStateException("Input widgets can't be null");
+  public List<List<Widget>> sortWidgetsByColor(
+      List<Widget> widgets, Comparator<Widget> colorComparator) {
 
-    Comparator<Widget> comparator = colorComparator;
-    if (colorComparator == null) {
-      //        This Comparator can also be written using lambda expression like so =>
-      //        comparator = (w1, w2) -> w1.getColor().compareTo(w2.getColor());
-      comparator = Comparator.comparing(Widget::getColor);
+    return createShipment(widgets, colorComparator, null, Widget::getColor);
+  }
+
+  /**
+   * This utility method is actually create the shipments on the basis of different requirements.
+   *
+   * @param widgets Takes the raw list of widgets as input.
+   * @param comparator comparator object that will sort the widgets before shipping.
+   * @param dateFunction data Function type object that will be passed in comparing function to
+   *     compare date field
+   * @param colorFunction color Function type object that will be passed in comparing function to
+   *     compare color field
+   * @return shipments list(container of shipments)
+   */
+  private List<List<Widget>> createShipment(
+      List<Widget> widgets,
+      Comparator<Widget> comparator,
+      Function<Widget, Date> dateFunction,
+      Function<Widget, String> colorFunction) {
+
+    /**
+     * If list is empty then we can't create shipment so we need to stop here and response with the
+     * relevant message.
+     */
+    if (widgets == null || widgets.size() < 1)
+      throw new IllegalStateException("Warehouse is Empty!");
+
+    /**
+     * If comparator will not be passed then comparing function will be passed for sorting on the
+     * basis of the passed field(i.e color or date field)
+     */
+    if (comparator == null) {
+      if (dateFunction != null) comparator = Comparator.comparing(dateFunction);
+      else if (colorFunction != null) comparator = Comparator.comparing(colorFunction);
     }
 
     widgets.sort(comparator);
+    List<List<Widget>> shipments = new ArrayList<>();
+    int from = 0, to = 0;
 
-    return widgets.subList(0, 10);
+    for (int i = 0; i < Math.ceil(widgets.size() / 10.0); i++) {
+      to += 10;
+      to = Math.min(widgets.size(), to);
+
+      shipments.add(new ArrayList<>(widgets.subList(from, to)));
+
+      from = to;
+    }
+
+    return shipments;
   }
 }
